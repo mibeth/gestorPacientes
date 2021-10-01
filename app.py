@@ -104,6 +104,7 @@ class HistoriaClinica(Resource):
             return ('Usuario no autorizado para realizar esta acción', 403)
         
         return {"historia" : searchByField(tbl_historia_clinica, True, "usuarioId", id_paciente)}
+
 class ModificarHistoriaClinica(Resource):
 
     def put(self, id_paciente, id_entrada):
@@ -121,9 +122,9 @@ class ModificarHistoriaClinica(Resource):
             if (entrada['creadoPorUsuarioId'] == usuario_id):
                 entrada['notaHistoria'] = entrada['notaHistoria']+ "-"+ notaHistoria
                 entrada['firmaHash'] = firmaHash(entrada['notaHistoria'], usuario_id)
-                redisInstance.hset("tbl_historia_clinica",entrada["id"],json.dumps(entrada));
+                redisInstance.hset("tbl_historia_clinica",entrada["id"],json.dumps(entrada))
                 entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
-                return ('Entrada de historia clinica moficada')
+                return ('Entrada de historia clínica modificada')
             else:
                 return ('Usuario no autorizado para modificar esta entrada')
         
