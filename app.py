@@ -15,6 +15,7 @@ import requests
 from werkzeug.http import HTTP_STATUS_CODES
 
 gestor_seguridad_url = "http://localhost:3000"
+
 redisInstance = redis.Redis(
     host='ec2-50-19-196-205.compute-1.amazonaws.com', 
     port=17830,
@@ -61,6 +62,10 @@ def validarAccion(accion_id, usuario_id):
     data = response.json()
     return bool(data["result"])
 
+def firmaHash(contenido, usuarioId):
+    toHash=str(usuarioId)+"-"+str(contenido)
+    hash_object= hashlib.sha256(toHash.encode())
+    return hash_object.hexdigest()
 
 class GestorPaciente(Resource):
     def post(self, id_paciente):       
@@ -99,6 +104,29 @@ class HistoriaClinica(Resource):
             return ('Usuario no autorizado para realizar esta acción', 403)
         
         return {"historia" : searchByField(tbl_historia_clinica, True, "usuarioId", id_paciente)}
+class ModificarHistoriaClinica(Resource):
+
+    def put(self, id_paciente, id_entrada):
+        usuario_id = validarToken()
+        if usuario_id is None:
+            return ('Autenticacion no válida', 403)
+        autoriza = validarAccion(1000, usuario_id)
+        if autoriza == False: 
+            return ('Usuario no autorizado para realizar esta acción', 403)
+        entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
+        notaHistoria = request.json["notaHistoria"]
+        if entrada is None:
+            return ('Entrada no encontrada', 404)
+        else:
+            if (entrada['creadoPorUsuarioId'] == usuario_id):
+                entrada['notaHistoria'] = entrada['notaHistoria']+ "-"+ notaHistoria
+                entrada['firmaHash'] = firmaHash(entrada['notaHistoria'], usuario_id)
+                redisInstance.hset("tbl_historia_clinica",entrada["id"],json.dumps(entrada));
+                entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
+                return ('Entrada de historia clinica moficada')
+            else:
+                return ('Usuario no autorizado para modificar esta entrada')
+        
 
 
 app = Flask(__name__) 
@@ -110,6 +138,7 @@ api = Api(app)
 api.add_resource(GestorPaciente, "/paciente/<int:id_paciente>")
 api.add_resource(HealthCheck, "/paciente/healtchek")
 api.add_resource(HistoriaClinica, "/paciente/<int:id_paciente>/historia")
+api.add_resource(ModificarHistoriaClinica, "/paciente/<int:id_paciente>/historia/<int:id_entrada>")
 
 
 if __name__ == '__main__':
