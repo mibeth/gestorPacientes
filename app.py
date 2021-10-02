@@ -14,7 +14,7 @@ import requests
 
 from werkzeug.http import HTTP_STATUS_CODES
 
-gestor_seguridad_url = "http://localhost:3000"
+gestor_seguridad_url = "http://miso-gestorseguridad.herokuapp.com/gestorSeguridad"
 
 redisInstance = redis.Redis(
     host='ec2-50-19-196-205.compute-1.amazonaws.com', 
@@ -51,16 +51,31 @@ def searchByField(collection, searchForCollection, field1, valueToSearch1,field2
     else:
         return None
 
+PREFIX = 'Bearer'
+
+def get_token(header):
+    bearer, _, token = header.partition(' ')
+    if bearer != PREFIX:
+        raise ValueError('Invalid token')
+
+    return token
+
 def validarToken():
-    token = request.headers.get('Authorization')
-    response = requests.post(gestor_seguridad_url+'/validarToken', data={'token': token})
-    data = response.json()
-    return data["usuario_id"]
+    token = get_token(request.headers.get('Authorization'))
+    response = requests.post(gestor_seguridad_url+'/authorizeToken', json={"token": token})
+    if response.status_code == 200:
+        data = response.json()
+        return data["id"]
+    else: 
+        return None
 
 def validarAccion(accion_id, usuario_id):
-    response = requests.post(gestor_seguridad_url+'/validarAccion', params={'usuario': usuario_id, 'accion': accion_id})
-    data = response.json()
-    return bool(data["result"])
+    response = requests.post(gestor_seguridad_url+'/authorizeAction', json={"usuarioId": usuario_id, "accionId": accion_id})
+    if response.status_code == 200:
+        data = response.json()
+        return bool(data["autorization"])
+    else: 
+        return False
 
 def firmaHash(contenido, usuarioId):
     toHash=str(usuarioId)+"-"+str(contenido)
@@ -97,12 +112,12 @@ class HealthCheck(Resource):
 class HistoriaClinica(Resource):
     def get(self, id_paciente):
         usuario_id = validarToken()
+        print(str(usuario_id))
         if usuario_id is None:
             return ('Autenticacion no válida', 403)
         autoriza = validarAccion(1000, usuario_id)
-        if autoriza == False: 
+        if autoriza == False:
             return ('Usuario no autorizado para realizar esta acción', 403)
-        
         return {"historia" : searchByField(tbl_historia_clinica, True, "usuarioId", id_paciente)}
 
 class ModificarHistoriaClinica(Resource):
