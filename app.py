@@ -151,7 +151,7 @@ app_context.push()
 
 api = Api(app)
 api.add_resource(GestorPaciente, "/paciente/<int:id_paciente>")
-api.add_resource(HealthCheck, "/healthCheck")
+api.add_resource(HealthCheck, "/paciente/healthCheck")
 api.add_resource(HistoriaClinica, "/paciente/<int:id_paciente>/historia")
 api.add_resource(ModificarHistoriaClinica, "/paciente/<int:id_paciente>/historia/<int:id_entrada>")
 
