@@ -139,7 +139,7 @@ class ModificarHistoriaClinica(Resource):
                 entrada['firmaHash'] = firmaHash(entrada['notaHistoria'], usuario_id)
                 redisInstance.hset("tbl_historia_clinica",entrada["id"],json.dumps(entrada))
                 entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
-                return ('Entrada de historia clínica modificada')
+                return (entrada)
             else:
                 return ('Usuario no autorizado para modificar esta entrada')
         
@@ -152,7 +152,7 @@ app_context.push()
 
 api = Api(app)
 api.add_resource(GestorPaciente, "/paciente/<int:id_paciente>")
-api.add_resource(HealthCheck, "/paciente/healtchek")
+api.add_resource(HealthCheck, "/healtchek")
 api.add_resource(HistoriaClinica, "/paciente/<int:id_paciente>/historia")
 api.add_resource(ModificarHistoriaClinica, "/paciente/<int:id_paciente>/historia/<int:id_entrada>")
 
