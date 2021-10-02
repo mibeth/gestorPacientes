@@ -126,7 +126,7 @@ class ModificarHistoriaClinica(Resource):
         usuario_id = validarToken()
         if usuario_id is None:
             return ('Autenticacion no válida', 403)
-        autoriza = validarAccion(1000, usuario_id)
+        autoriza = validarAccion(1001, usuario_id)
         if autoriza == False: 
             return ('Usuario no autorizado para realizar esta acción', 403)
         entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
