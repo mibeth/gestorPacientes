@@ -78,9 +78,9 @@ def validarAccion(accion_id, usuario_id):
         return False
 
 def firmaHash(contenido, usuarioId):
-    toHash=str(usuarioId)+"-"+str(contenido)
-    hash_object= hashlib.sha256(toHash.encode())
-    return hash_object.hexdigest()
+    response = requests.post(gestor_seguridad_url+'/hashContent', json={"usuarioId": usuarioId, "contenido": contenido})
+    data = response.json()
+    return bool(data["hash"])
 
 class GestorPaciente(Resource):
     def post(self, id_paciente):       
@@ -143,7 +143,6 @@ class ModificarHistoriaClinica(Resource):
             else:
                 return ('Usuario no autorizado para modificar esta entrada')
         
-
 
 app = Flask(__name__) 
 app_context = app.app_context()
