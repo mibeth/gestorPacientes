@@ -80,7 +80,12 @@ def validarAccion(accion_id, usuario_id):
 def firmaHash(contenido, usuarioId):
     response = requests.post(gestor_seguridad_url+'/hashContent', json={"usuarioId": usuarioId, "contenido": contenido})
     data = response.json()
-    return bool(data["hash"])
+    return data["hash"]
+
+def getEntrada(id_paciente, id_entrada):
+    tbl_historia_clinica = redisInstance.hgetall("tbl_historia_clinica")
+    return searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
+               
 
 class GestorPaciente(Resource):
     def post(self, id_paciente):       
@@ -138,8 +143,7 @@ class ModificarHistoriaClinica(Resource):
                 entrada['notaHistoria'] = entrada['notaHistoria']+ "-"+ notaHistoria
                 entrada['firmaHash'] = firmaHash(entrada['notaHistoria'], usuario_id)
                 redisInstance.hset("tbl_historia_clinica",entrada["id"],json.dumps(entrada))
-                entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
-                return (entrada)
+                return getEntrada(id_paciente, id_entrada)
             else:
                 return ('Usuario no autorizado para modificar esta entrada')
         
