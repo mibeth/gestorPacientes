@@ -26,8 +26,6 @@ redisInstance = redis.Redis(
     decode_responses=True
     )
 
-#tabla historias clinicas
-tbl_historia_clinica = redisInstance.hgetall("tbl_historia_clinica")
 
 def searchByField(collection, searchForCollection, field1, valueToSearch1,field2=None, valueToSearch2=None):
     output=[]
@@ -123,6 +121,7 @@ class HistoriaClinica(Resource):
         autoriza = validarAccion(1000, usuario_id)
         if autoriza == False:
             return ('Usuario no autorizado para realizar esta acción', 403)
+        tbl_historia_clinica = redisInstance.hgetall("tbl_historia_clinica")
         return {"historia" : searchByField(tbl_historia_clinica, True, "usuarioId", id_paciente)}
 
 class ModificarHistoriaClinica(Resource):
@@ -134,7 +133,7 @@ class ModificarHistoriaClinica(Resource):
         autoriza = validarAccion(1001, usuario_id)
         if autoriza == False: 
             return ('Usuario no autorizado para realizar esta acción', 403)
-        entrada = searchByField(tbl_historia_clinica, False, "usuarioId", id_paciente, "id", id_entrada)
+        entrada = getEntrada(id_paciente, id_entrada)
         notaHistoria = request.json["notaHistoria"]
         if entrada is None:
             return ('Entrada no encontrada', 404)
